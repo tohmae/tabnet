@@ -333,6 +333,10 @@ class TabModel(BaseEstimator):
 
         self.network.load_state_dict(update_state_dict)
 
+    def load_class_attrs(self, class_attrs):
+        for attr_name, attr_value in class_attrs.items():
+            setattr(self, attr_name, attr_value)
+
     def save_model(self, path):
         """Saving TabNet model in two distinct files.
 
@@ -348,12 +352,19 @@ class TabModel(BaseEstimator):
 
         """
         saved_params = {}
+        init_params = {}
         for key, val in self.get_params().items():
             if isinstance(val, type):
                 # Don't save torch specific params
                 continue
             else:
-                saved_params[key] = val
+                init_params[key] = val
+        saved_params["init_params"] = init_params
+
+        class_attrs = {
+            "preds_mapper": self.preds_mapper
+        }
+        saved_params["class_attrs"] = class_attrs
 
         # Create folder
         Path(path).mkdir(parents=True, exist_ok=True)
@@ -381,7 +392,7 @@ class TabModel(BaseEstimator):
             with zipfile.ZipFile(filepath) as z:
                 with z.open("model_params.json") as f:
                     loaded_params = json.load(f)
-                    loaded_params["device_name"] = self.device_name
+                    loaded_params["init_params"]["device_name"] = self.device_name
                 with z.open("network.pt") as f:
                     try:
                         saved_state_dict = torch.load(f, map_location=self.device)
@@ -396,11 +407,12 @@ class TabModel(BaseEstimator):
         except KeyError:
             raise KeyError("Your zip file is missing at least one component")
 
-        self.__init__(**loaded_params)
+        self.__init__(**loaded_params["init_params"])
 
         self._set_network()
         self.network.load_state_dict(saved_state_dict)
         self.network.eval()
+        self.load_class_attrs(loaded_params["class_attrs"])
 
         return
 
