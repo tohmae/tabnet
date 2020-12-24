@@ -8,7 +8,7 @@ executors:
     # here we can define an executor that will be shared across different jobs
     python-executor:
         docker:
-            - image: python:3.7-slim-buster@sha256:fecbb1a9695d25c974906263c64ffba6548ce14a169ed36be58331659383c25e
+            - image: python:3.7-slim-buster@sha256:6a14e7d13f3cae4ae51086deca7e32759d403151c96e4b5d55da3307dde077e7
               environment:
                   POETRY_CACHE: /work/.cache/poetry
                   PIP_CACHE_DIR: /work/.cache/pip
